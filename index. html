@@ -1,0 +1,1007 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>SRIVATSAV Water Purifiers - Service & Follow-up Tracker</title>
+
+  <!-- PWA Web App Manifest (Data URI) -->
+  <link rel="manifest" href='data:application/manifest+json,{"name":"SRIVATSAV Water Purifiers Tracker","short_name":"SRIVATSAV Tracker","start_url":".","display":"standalone","background_color":"#0f172a","theme_color":"#0284c7","description":"Service & Customer Follow-up Management for SRIVATSAV Water Purifiers","icons":[{"src":"https://img.icons8.com/color/192/water-filter.png","sizes":"192x192","type":"image/png"},{"src":"https://img.icons8.com/color/512/water-filter.png","sizes":"512x512","type":"image/png"}]}'>
+
+  <meta name="theme-color" content="#0284c7">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="SRIVATSAV Tracker">
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+    body {
+      font-family: 'Inter', sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .hide-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .hide-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+  </style>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col pb-20 md:pb-6">
+
+  <!-- Top Header -->
+  <header class="bg-slate-800/90 backdrop-blur-md sticky top-0 z-30 border-b border-slate-700/60 shadow-lg px-4 py-3">
+    <div class="max-w-4xl mx-auto flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center text-white shadow-md shadow-cyan-500/20">
+          <i class="fa-solid fa-faucet-drip text-xl"></i>
+        </div>
+        <div>
+          <h1 class="text-base font-bold tracking-tight text-white leading-tight">SRIVATSAV WATER PURIFIERS</h1>
+          <p class="text-xs text-cyan-400 font-medium">Service & Follow-up Manager</p>
+        </div>
+      </div>
+      <!-- PWA Install Button -->
+      <button id="pwaInstallBtn" onclick="installPWA()" class="hidden bg-cyan-600 hover:bg-cyan-500 text-white text-xs px-3 py-1.5 rounded-lg font-semibold shadow flex items-center space-x-1.5 animate-pulse">
+        <i class="fa-solid fa-download"></i>
+        <span>Install App</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Warning Banner for Local Storage -->
+  <div id="warningBanner" class="bg-amber-500/10 border-b border-amber-500/30 px-4 py-2.5 text-xs text-amber-200 flex items-start justify-between space-x-2">
+    <div class="flex items-start space-x-2">
+      <i class="fa-solid fa-triangle-exclamation text-amber-400 mt-0.5 text-sm shrink-0"></i>
+      <div>
+        <strong class="font-semibold text-amber-300">Local Storage Mode:</strong> All data is stored inside your browser. Clear browser data or format phone will erase records. 
+        <a href="#backup-section" onclick="switchTab('backup')" class="underline text-amber-300 font-bold hover:text-white">Export regular backups</a>.
+      </div>
+    </div>
+    <button onclick="dismissWarning()" class="text-amber-400 hover:text-amber-100 p-1">
+      <i class="fa-solid fa-xmark text-sm"></i>
+    </button>
+  </div>
+
+  <!-- Notification Banner -->
+  <div id="notificationBanner" class="hidden bg-cyan-950/80 border-b border-cyan-800/50 px-4 py-2 text-xs text-cyan-200 flex items-center justify-between">
+    <div class="flex items-center space-x-2">
+      <i class="fa-solid fa-bell text-cyan-400"></i>
+      <span>Enable daily reminders for due services?</span>
+    </div>
+    <button onclick="requestNotificationPermission()" class="bg-cyan-600 hover:bg-cyan-500 text-white px-2.5 py-1 rounded text-xs font-semibold">Enable</button>
+  </div>
+
+  <main class="max-w-4xl mx-auto w-full px-4 pt-4 flex-1">
+
+    <!-- Dashboard Quick Stats -->
+    <section class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
+      <div onclick="switchTab('customers'); setFilter('all');" class="bg-slate-800/80 border border-slate-700/60 p-3.5 rounded-2xl cursor-pointer hover:border-slate-500 transition shadow-sm">
+        <div class="flex items-center justify-between mb-1">
+          <span class="text-xs font-medium text-slate-400">Total Records</span>
+          <i class="fa-solid fa-users text-cyan-400 text-sm"></i>
+        </div>
+        <div id="statTotal" class="text-2xl font-extrabold text-white">0</div>
+      </div>
+
+      <div onclick="switchTab('customers'); setFilter('overdue');" class="bg-slate-800/80 border border-red-500/30 p-3.5 rounded-2xl cursor-pointer hover:border-red-500 transition shadow-sm bg-gradient-to-br from-red-950/20 to-transparent">
+        <div class="flex items-center justify-between mb-1">
+          <span class="text-xs font-medium text-red-300">Overdue Service</span>
+          <i class="fa-solid fa-circle-exclamation text-red-400 text-sm"></i>
+        </div>
+        <div id="statOverdue" class="text-2xl font-extrabold text-red-400">0</div>
+      </div>
+
+      <div onclick="switchTab('customers'); setFilter('today');" class="bg-slate-800/80 border border-amber-500/30 p-3.5 rounded-2xl cursor-pointer hover:border-amber-500 transition shadow-sm bg-gradient-to-br from-amber-950/20 to-transparent">
+        <div class="flex items-center justify-between mb-1">
+          <span class="text-xs font-medium text-amber-300">Due Today</span>
+          <i class="fa-solid fa-clock text-amber-400 text-sm"></i>
+        </div>
+        <div id="statToday" class="text-2xl font-extrabold text-amber-400">0</div>
+      </div>
+
+      <div onclick="switchTab('customers'); setFilter('upcoming');" class="bg-slate-800/80 border border-emerald-500/30 p-3.5 rounded-2xl cursor-pointer hover:border-emerald-500 transition shadow-sm bg-gradient-to-br from-emerald-950/20 to-transparent">
+        <div class="flex items-center justify-between mb-1">
+          <span class="text-xs font-medium text-emerald-300">Next 7 Days</span>
+          <i class="fa-solid fa-calendar-week text-emerald-400 text-sm"></i>
+        </div>
+        <div id="statUpcoming" class="text-2xl font-extrabold text-emerald-400">0</div>
+      </div>
+    </section>
+
+    <!-- TAB NAVIGATION (Desktop View Toggle) -->
+    <div class="hidden md:flex border-b border-slate-700/80 mb-5 space-x-6">
+      <button onclick="switchTab('customers')" id="tabNav-customers" class="py-2.5 font-semibold text-sm border-b-2 border-cyan-500 text-cyan-400 flex items-center space-x-2">
+        <i class="fa-solid fa-address-book"></i>
+        <span>Customer Directory</span>
+      </button>
+      <button onclick="switchTab('add')" id="tabNav-add" class="py-2.5 font-semibold text-sm border-b-2 border-transparent text-slate-400 hover:text-white flex items-center space-x-2">
+        <i class="fa-solid fa-user-plus"></i>
+        <span>Add Customer</span>
+      </button>
+      <button onclick="switchTab('backup')" id="tabNav-backup" class="py-2.5 font-semibold text-sm border-b-2 border-transparent text-slate-400 hover:text-white flex items-center space-x-2">
+        <i class="fa-solid fa-database"></i>
+        <span>Backup & Restore</span>
+      </button>
+    </div>
+
+    <!-- VIEW 1: CUSTOMER LIST -->
+    <section id="view-customers" class="space-y-4">
+      
+      <!-- Search & Filters -->
+      <div class="bg-slate-800/90 p-3.5 rounded-2xl border border-slate-700/70 shadow-md space-y-3">
+        <!-- Search Input -->
+        <div class="relative">
+          <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3.5 text-slate-400 text-sm"></i>
+          <input type="text" id="searchInput" oninput="renderCustomerList()" placeholder="Search by name, phone number, or area..." 
+            class="w-full bg-slate-900 border border-slate-700 rounded-xl pl-10 pr-9 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-cyan-500">
+          <button onclick="clearSearch()" id="clearSearchBtn" class="hidden absolute right-3 top-3 text-slate-400 hover:text-slate-200">
+            <i class="fa-solid fa-circle-xmark"></i>
+          </button>
+        </div>
+
+        <!-- Category Filters -->
+        <div class="flex space-x-1.5 overflow-x-auto hide-scrollbar text-xs pt-1 pb-0.5">
+          <button onclick="setFilter('all')" id="filter-all" class="filter-btn px-3 py-1.5 rounded-lg font-semibold bg-cyan-600 text-white shrink-0">All (<span id="cnt-all">0</span>)</button>
+          <button onclick="setFilter('overdue')" id="filter-overdue" class="filter-btn px-3 py-1.5 rounded-lg font-semibold bg-slate-700 text-slate-300 hover:bg-slate-600 shrink-0">Overdue (<span id="cnt-overdue">0</span>)</button>
+          <button onclick="setFilter('today')" id="filter-today" class="filter-btn px-3 py-1.5 rounded-lg font-semibold bg-slate-700 text-slate-300 hover:bg-slate-600 shrink-0">Due Today (<span id="cnt-today">0</span>)</button>
+          <button onclick="setFilter('upcoming')" id="filter-upcoming" class="filter-btn px-3 py-1.5 rounded-lg font-semibold bg-slate-700 text-slate-300 hover:bg-slate-600 shrink-0">30 Days (<span id="cnt-upcoming">0</span>)</button>
+          <button onclick="setFilter('fresh')" id="filter-fresh" class="filter-btn px-3 py-1.5 rounded-lg font-semibold bg-slate-700 text-slate-300 hover:bg-slate-600 shrink-0">Active/Fresh (<span id="cnt-fresh">0</span>)</button>
+        </div>
+      </div>
+
+      <!-- Customer Cards List -->
+      <div id="customerCardsContainer" class="space-y-3">
+        <!-- Dynamic Cards Inserted Here -->
+      </div>
+      
+      <!-- Empty State -->
+      <div id="emptyState" class="hidden text-center py-12 px-4 bg-slate-800/40 rounded-2xl border border-dashed border-slate-700">
+        <i class="fa-solid fa-folder-open text-4xl text-slate-600 mb-3"></i>
+        <h3 class="text-base font-semibold text-slate-300">No Customers Found</h3>
+        <p class="text-xs text-slate-500 mt-1 max-w-xs mx-auto">Try matching different search terms or add a new customer record.</p>
+        <button onclick="switchTab('add')" class="mt-4 bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-semibold px-4 py-2 rounded-xl shadow">
+          + Add New Customer
+        </button>
+      </div>
+    </section>
+
+    <!-- VIEW 2: ADD / EDIT FORM -->
+    <section id="view-add" class="hidden">
+      <div class="bg-slate-800/90 border border-slate-700/70 rounded-2xl p-4 sm:p-6 shadow-xl">
+        <div class="flex items-center justify-between border-b border-slate-700 pb-3 mb-4">
+          <h2 id="formTitle" class="text-base font-bold text-slate-100 flex items-center space-x-2">
+            <i class="fa-solid fa-user-plus text-cyan-400"></i>
+            <span>Add New Customer</span>
+          </h2>
+          <button onclick="resetCustomerForm(); switchTab('customers');" class="text-slate-400 hover:text-white text-xs bg-slate-700 px-2.5 py-1 rounded-lg">Cancel</button>
+        </div>
+
+        <form id="customerForm" onsubmit="saveCustomer(event)" class="space-y-4">
+          <input type="hidden" id="customerId">
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Customer Full Name *</label>
+            <input type="text" id="custName" required placeholder="e.g. Ramesh Reddy" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-slate-100 focus:outline-none focus:border-cyan-500">
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-semibold text-slate-300 mb-1">Phone Number *</label>
+              <input type="tel" id="custPhone" required placeholder="e.g. 9876543210" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-slate-100 focus:outline-none focus:border-cyan-500">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-300 mb-1">Location / Area</label>
+              <input type="text" id="custArea" placeholder="e.g. Hanamkonda, Kazipet, Warangal" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-slate-100 focus:outline-none focus:border-cyan-500">
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-semibold text-slate-300 mb-1">Filter / Purifier Model</label>
+              <select id="custPurifierType" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-slate-100 focus:outline-none focus:border-cyan-500">
+                <option value="RO System">RO System</option>
+                <option value="RO + UV">RO + UV</option>
+                <option value="RO + UV + Alkaline">RO + UV + Alkaline</option>
+                <option value="General Service">General Service</option>
+                <option value="Filter Change">Filter Change</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-slate-300 mb-1">Follow-up Interval</label>
+              <select id="custInterval" onchange="recalculateNextDate()" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-slate-100 focus:outline-none focus:border-cyan-500">
+                <option value="3" selected>3 Months (Standard / 90 Days)</option>
+                <option value="1">1 Month (30 Days)</option>
+                <option value="6">6 Months (180 Days)</option>
+                <option value="12">12 Months (1 Year)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-semibold text-slate-300 mb-1">Last Service / Installation Date *</label>
+              <input type="date" id="custLastServiceDate" required onchange="recalculateNextDate()" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-slate-100 focus:outline-none focus:border-cyan-500">
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-slate-300 mb-1">Next Follow-up Due Date (Auto)</label>
+              <input type="date" id="custNextDueDate" readonly class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-sm text-cyan-400 font-bold focus:outline-none cursor-not-allowed">
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Initial Note / Remarks</label>
+            <textarea id="custNotes" rows="3" placeholder="e.g. Copper RO installed. Pre-filter changed." class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-slate-100 focus:outline-none focus:border-cyan-500"></textarea>
+          </div>
+
+          <div class="pt-2 flex items-center space-x-3">
+            <button type="submit" class="flex-1 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-bold py-3 rounded-xl shadow-md text-sm transition">
+              <i class="fa-solid fa-floppy-disk mr-2"></i> Save Customer Record
+            </button>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <!-- VIEW 3: BACKUP & RESTORE -->
+    <section id="view-backup" class="hidden space-y-4">
+      <div class="bg-slate-800/90 border border-slate-700/70 rounded-2xl p-5 shadow-xl space-y-4">
+        <h2 class="text-base font-bold text-slate-100 flex items-center space-x-2 border-b border-slate-700 pb-3">
+          <i class="fa-solid fa-database text-cyan-400"></i>
+          <span>Data Backup & Management</span>
+        </h2>
+
+        <p class="text-xs text-slate-300 leading-relaxed">
+          Because data is stored entirely on your local browser, creating weekly backups ensures your customer records remain safe even if your phone is changed or wiped.
+        </p>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+          <!-- Export JSON -->
+          <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-700/80 space-y-2">
+            <h3 class="text-xs font-bold text-cyan-400 flex items-center space-x-2">
+              <i class="fa-solid fa-file-export"></i>
+              <span>Export Complete Backup (JSON)</span>
+            </h3>
+            <p class="text-[11px] text-slate-400">Saves all customers, service logs, and notes in full detail.</p>
+            <button onclick="exportJSONBackup()" class="w-full bg-cyan-600 hover:bg-cyan-500 text-white font-semibold py-2 px-3 rounded-lg text-xs flex items-center justify-center space-x-2">
+              <i class="fa-solid fa-download"></i>
+              <span>Download JSON Backup</span>
+            </button>
+          </div>
+
+          <!-- Export CSV -->
+          <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-700/80 space-y-2">
+            <h3 class="text-xs font-bold text-emerald-400 flex items-center space-x-2">
+              <i class="fa-solid fa-file-excel"></i>
+              <span>Export Excel Sheet (CSV)</span>
+            </h3>
+            <p class="text-[11px] text-slate-400">Export table format suitable for opening in Microsoft Excel or Google Sheets.</p>
+            <button onclick="exportCSV()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-2 px-3 rounded-lg text-xs flex items-center justify-center space-x-2">
+              <i class="fa-solid fa-file-csv"></i>
+              <span>Download CSV File</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Restore JSON -->
+        <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-700/80 space-y-3 pt-4">
+          <h3 class="text-xs font-bold text-amber-400 flex items-center space-x-2">
+            <i class="fa-solid fa-file-import"></i>
+            <span>Restore Records from Backup File</span>
+          </h3>
+          <p class="text-[11px] text-slate-400">Select a previously exported `.json` file to restore your customer database.</p>
+          
+          <input type="file" id="importFile" accept=".json" class="block w-full text-xs text-slate-400 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-slate-700 file:text-slate-200 hover:file:bg-slate-600">
+          
+          <button onclick="importJSONBackup()" class="w-full bg-amber-600 hover:bg-amber-500 text-white font-semibold py-2.5 px-3 rounded-lg text-xs flex items-center justify-center space-x-2">
+            <i class="fa-solid fa-upload"></i>
+            <span>Restore Data Now</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- LOG CALL / SERVICE MODAL -->
+  <div id="serviceLogModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-md p-5 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-700 pb-3">
+        <h3 class="text-sm font-bold text-slate-100 flex items-center space-x-2">
+          <i class="fa-solid fa-clipboard-list text-cyan-400"></i>
+          <span>Service & Call History</span>
+        </h3>
+        <button onclick="closeServiceLogModal()" class="text-slate-400 hover:text-white">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+
+      <div class="bg-slate-900/80 p-3 rounded-xl border border-slate-700/60">
+        <div id="modalCustName" class="font-bold text-slate-200 text-sm">Customer Name</div>
+        <div id="modalCustMeta" class="text-xs text-slate-400">Phone & Area</div>
+      </div>
+
+      <!-- Add New Log Entry -->
+      <div class="space-y-2">
+        <label class="block text-xs font-semibold text-slate-300">Add New Interaction Note</label>
+        <textarea id="newLogText" rows="2" placeholder="e.g. Called customer. Confirmed service appointment for tomorrow." class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-cyan-500"></textarea>
+        <button onclick="saveLogEntry()" class="w-full bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-semibold py-2 rounded-lg">
+          + Add Note
+        </button>
+      </div>
+
+      <!-- Past History -->
+      <div>
+        <h4 class="text-xs font-bold text-slate-400 mb-2">Previous Notes & Logs:</h4>
+        <div id="logHistoryContainer" class="max-h-48 overflow-y-auto space-y-2 pr-1 text-xs">
+          <!-- Logs render here -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BOTTOM NAVIGATION BAR (Mobile First) -->
+  <nav class="md:hidden fixed bottom-0 left-0 right-0 bg-slate-800/95 backdrop-blur-lg border-t border-slate-700/80 z-30 px-3 py-2 flex justify-around items-center">
+    <button onclick="switchTab('customers')" id="mobNav-customers" class="flex flex-col items-center text-cyan-400">
+      <i class="fa-solid fa-address-book text-lg"></i>
+      <span class="text-[10px] font-semibold mt-0.5">Directory</span>
+    </button>
+    <button onclick="switchTab('add')" id="mobNav-add" class="flex flex-col items-center text-slate-400 hover:text-white">
+      <i class="fa-solid fa-user-plus text-lg"></i>
+      <span class="text-[10px] font-semibold mt-0.5">Add New</span>
+    </button>
+    <button onclick="switchTab('backup')" id="mobNav-backup" class="flex flex-col items-center text-slate-400 hover:text-white">
+      <i class="fa-solid fa-database text-lg"></i>
+      <span class="text-[10px] font-semibold mt-0.5">Backup</span>
+    </button>
+  </nav>
+
+  <!-- JAVASCRIPT APP LOGIC -->
+  <script>
+    // State Variables
+    let customers = [];
+    let activeFilter = 'all';
+    let activeLogCustomerId = null;
+    let deferredPrompt = null;
+
+    // Load Data on Initialization
+    window.addEventListener('DOMContentLoaded', () => {
+      loadStorageData();
+      setDefaultDates();
+      renderCustomerList();
+      updateDashboardStats();
+      checkNotificationPermission();
+      registerServiceWorker();
+    });
+
+    // PWA Install Event Handler
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      document.getElementById('pwaInstallBtn').classList.remove('hidden');
+    });
+
+    function installPWA() {
+      if (deferredPrompt) {
+        deferredPrompt.prompt();
+        deferredPrompt.userChoice.then(() => {
+          deferredPrompt = null;
+          document.getElementById('pwaInstallBtn').classList.add('hidden');
+        });
+      }
+    }
+
+    // Load from LocalStorage
+    function loadStorageData() {
+      const data = localStorage.getItem('srivatsav_purifiers_data');
+      if (data) {
+        try {
+          customers = JSON.parse(data);
+        } catch (e) {
+          console.error('Failed to parse local storage', e);
+          customers = [];
+        }
+      } else {
+        // Seed initial sample record if empty
+        customers = [
+          {
+            id: 'cust_' + Date.now(),
+            name: 'K. Venkatesh',
+            phone: '9849012345',
+            area: 'Hanamkonda',
+            purifierType: 'RO + UV',
+            intervalMonths: 3,
+            lastServiceDate: getOffsetDateString(-95), // Overdue by ~5 days
+            nextDueDate: getOffsetDateString(-5),
+            notes: 'Installed Pre-Filter and changed Spun Cartridge.',
+            logs: [
+              { date: new Date().toLocaleDateString('en-IN'), text: 'Initial record created' }
+            ]
+          }
+        ];
+        saveToStorage();
+      }
+    }
+
+    function saveToStorage() {
+      localStorage.setItem('srivatsav_purifiers_data', JSON.stringify(customers));
+      updateDashboardStats();
+    }
+
+    function dismissWarning() {
+      document.getElementById('warningBanner').classList.add('hidden');
+    }
+
+    // Helper Date Functions
+    function formatDate(dateStr) {
+      if (!dateStr) return 'N/A';
+      const parts = dateStr.split('-');
+      if (parts.length !== 3) return dateStr;
+      return `${parts[2]}/${parts[1]}/${parts[0]}`;
+    }
+
+    function getOffsetDateString(daysOffset) {
+      const d = new Date();
+      d.setDate(d.getDate() + daysOffset);
+      return d.toISOString().split('T')[0];
+    }
+
+    function calculateNextDueDate(startDateStr, intervalMonths) {
+      if (!startDateStr) return '';
+      const d = new Date(startDateStr);
+      d.setMonth(d.getMonth() + parseInt(intervalMonths));
+      return d.toISOString().split('T')[0];
+    }
+
+    function setDefaultDates() {
+      const todayStr = new Date().toISOString().split('T')[0];
+      const lastServiceInput = document.getElementById('custLastServiceDate');
+      if (!lastServiceInput.value) {
+        lastServiceInput.value = todayStr;
+      }
+      recalculateNextDate();
+    }
+
+    function recalculateNextDate() {
+      const lastDate = document.getElementById('custLastServiceDate').value;
+      const interval = document.getElementById('custInterval').value;
+      const nextDate = calculateNextDueDate(lastDate, interval);
+      document.getElementById('custNextDueDate').value = nextDate;
+    }
+
+    // Navigation Logic
+    function switchTab(tab) {
+      ['customers', 'add', 'backup'].forEach(t => {
+        document.getElementById(`view-${t}`).classList.add('hidden');
+        
+        // Desktop nav
+        const desktopBtn = document.getElementById(`tabNav-${t}`);
+        if (desktopBtn) {
+          desktopBtn.classList.remove('border-cyan-500', 'text-cyan-400');
+          desktopBtn.classList.add('border-transparent', 'text-slate-400');
+        }
+
+        // Mobile nav
+        const mobBtn = document.getElementById(`mobNav-${t}`);
+        if (mobBtn) {
+          mobBtn.classList.remove('text-cyan-400');
+          mobBtn.classList.add('text-slate-400');
+        }
+      });
+
+      // Highlight active
+      document.getElementById(`view-${tab}`).classList.remove('hidden');
+
+      const activeDesk = document.getElementById(`tabNav-${tab}`);
+      if (activeDesk) {
+        activeDesk.classList.add('border-cyan-500', 'text-cyan-400');
+        activeDesk.classList.remove('border-transparent', 'text-slate-400');
+      }
+
+      const activeMob = document.getElementById(`mobNav-${tab}`);
+      if (activeMob) {
+        activeMob.classList.add('text-cyan-400');
+        activeMob.classList.remove('text-slate-400');
+      }
+
+      if (tab === 'customers') {
+        renderCustomerList();
+      }
+    }
+
+    // Search & Filter Handler
+    function setFilter(filterKey) {
+      activeFilter = filterKey;
+      document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.classList.remove('bg-cyan-600', 'text-white');
+        btn.classList.add('bg-slate-700', 'text-slate-300');
+      });
+
+      const activeBtn = document.getElementById(`filter-${filterKey}`);
+      if (activeBtn) {
+        activeBtn.classList.remove('bg-slate-700', 'text-slate-300');
+        activeBtn.classList.add('bg-cyan-600', 'text-white');
+      }
+
+      renderCustomerList();
+    }
+
+    function clearSearch() {
+      document.getElementById('searchInput').value = '';
+      document.getElementById('clearSearchBtn').classList.add('hidden');
+      renderCustomerList();
+    }
+
+    // Get Status of Customer (Overdue, Today, Upcoming, Fresh)
+    function getCustomerStatus(nextDueDateStr) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      const due = new Date(nextDueDateStr);
+      due.setHours(0, 0, 0, 0);
+
+      const diffDays = Math.round((due - today) / (1000 * 60 * 60 * 24));
+
+      if (diffDays < 0) {
+        return { type: 'overdue', days: Math.abs(diffDays), badgeClass: 'bg-red-500/20 text-red-400 border-red-500/40', text: `Overdue by ${Math.abs(diffDays)} days` };
+      } else if (diffDays === 0) {
+        return { type: 'today', days: 0, badgeClass: 'bg-amber-500/20 text-amber-300 border-amber-500/40', text: 'Service Due Today!' };
+      } else if (diffDays <= 30) {
+        return { type: 'upcoming', days: diffDays, badgeClass: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40', text: `Due in ${diffDays} days` };
+      } else {
+        return { type: 'fresh', days: diffDays, badgeClass: 'bg-slate-700 text-slate-300 border-slate-600', text: `Due in ${diffDays} days` };
+      }
+    }
+
+    // Render Customer Directory List
+    function renderCustomerList() {
+      const searchVal = (document.getElementById('searchInput').value || '').toLowerCase();
+      document.getElementById('clearSearchBtn').classList.toggle('hidden', searchVal === '');
+
+      const container = document.getElementById('customerCardsContainer');
+      const emptyState = document.getElementById('emptyState');
+      container.innerHTML = '';
+
+      let filtered = customers.filter(c => {
+        const matchesSearch = c.name.toLowerCase().includes(searchVal) ||
+                              c.phone.includes(searchVal) ||
+                              (c.area && c.area.toLowerCase().includes(searchVal));
+        
+        if (!matchesSearch) return false;
+
+        const status = getCustomerStatus(c.nextDueDate);
+        if (activeFilter === 'overdue') return status.type === 'overdue';
+        if (activeFilter === 'today') return status.type === 'today';
+        if (activeFilter === 'upcoming') return status.type === 'upcoming' || status.type === 'today';
+        if (activeFilter === 'fresh') return status.type === 'fresh';
+
+        return true;
+      });
+
+      // Sort: Overdue first, then Due Today, then chronologically
+      filtered.sort((a, b) => new Date(a.nextDueDate) - new Date(b.nextDueDate));
+
+      if (filtered.length === 0) {
+        emptyState.classList.remove('hidden');
+      } else {
+        emptyState.classList.add('hidden');
+        filtered.forEach(cust => {
+          const status = getCustomerStatus(cust.nextDueDate);
+          
+          const card = document.createElement('div');
+          card.className = `bg-slate-800/90 border rounded-2xl p-4 shadow-md transition space-y-3 ${
+            status.type === 'overdue' ? 'border-red-500/40' : status.type === 'today' ? 'border-amber-500/40' : 'border-slate-700/70'
+          }`;
+
+          card.innerHTML = `
+            <div class="flex items-start justify-between">
+              <div>
+                <h3 class="font-bold text-slate-100 text-base leading-snug flex items-center space-x-2">
+                  <span>${escapeHTML(cust.name)}</span>
+                </h3>
+                <div class="text-xs text-slate-400 mt-0.5 flex items-center space-x-2">
+                  <span><i class="fa-solid fa-location-dot text-slate-500 mr-1"></i>${escapeHTML(cust.area || 'N/A')}</span>
+                  <span>•</span>
+                  <span><i class="fa-solid fa-filter text-slate-500 mr-1"></i>${escapeHTML(cust.purifierType || 'RO')}</span>
+                </div>
+              </div>
+              <span class="text-[11px] font-semibold px-2.5 py-1 rounded-full border ${status.badgeClass} shrink-0">
+                ${status.text}
+              </span>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2 text-xs bg-slate-900/60 p-2.5 rounded-xl border border-slate-800">
+              <div>
+                <span class="text-slate-400 block text-[10px]">LAST SERVICE</span>
+                <span class="font-medium text-slate-200">${formatDate(cust.lastServiceDate)}</span>
+              </div>
+              <div>
+                <span class="text-slate-400 block text-[10px]">NEXT DUE DATE</span>
+                <span class="font-bold text-cyan-400">${formatDate(cust.nextDueDate)}</span>
+              </div>
+            </div>
+
+            ${cust.notes ? `<p class="text-xs text-slate-400 italic bg-slate-900/30 px-2.5 py-1.5 rounded-lg border border-slate-800/50"><i class="fa-solid fa-quote-left mr-1 text-[10px] text-slate-500"></i>${escapeHTML(cust.notes)}</p>` : ''}
+
+            <!-- Quick Action Buttons -->
+            <div class="pt-1 flex items-center justify-between gap-2 text-xs border-t border-slate-700/50">
+              <a href="tel:${cust.phone}" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-2 px-3 rounded-xl flex items-center justify-center space-x-1.5 shadow">
+                <i class="fa-solid fa-phone"></i>
+                <span>Call</span>
+              </a>
+
+              <button onclick="quickRenewService('${cust.id}')" class="flex-1 bg-cyan-600 hover:bg-cyan-500 text-white font-semibold py-2 px-3 rounded-xl flex items-center justify-center space-x-1.5 shadow">
+                <i class="fa-solid fa-rotate-right"></i>
+                <span>Service Done</span>
+              </button>
+
+              <button onclick="openServiceLogModal('${cust.id}')" class="bg-slate-700 hover:bg-slate-600 text-slate-200 px-3 py-2 rounded-xl flex items-center space-x-1" title="Service Logs">
+                <i class="fa-solid fa-clipboard-list"></i>
+                <span class="text-[10px] bg-slate-800 px-1.5 py-0.5 rounded-full font-bold ml-1 text-cyan-400">${cust.logs ? cust.logs.length : 0}</span>
+              </button>
+
+              <button onclick="editCustomer('${cust.id}')" class="bg-slate-700 hover:bg-slate-600 text-slate-300 p-2 rounded-xl" title="Edit">
+                <i class="fa-solid fa-pen-to-square"></i>
+              </button>
+
+              <button onclick="deleteCustomer('${cust.id}')" class="bg-slate-700 hover:bg-red-600/80 text-red-300 hover:text-white p-2 rounded-xl" title="Delete">
+                <i class="fa-solid fa-trash"></i>
+              </button>
+            </div>
+          `;
+
+          container.appendChild(card);
+        });
+      }
+    }
+
+    // Save or Edit Customer Record
+    function saveCustomer(e) {
+      e.preventDefault();
+      const id = document.getElementById('customerId').value;
+      const name = document.getElementById('custName').value.trim();
+      const phone = document.getElementById('custPhone').value.trim();
+      const area = document.getElementById('custArea').value.trim();
+      const purifierType = document.getElementById('custPurifierType').value;
+      const intervalMonths = parseInt(document.getElementById('custInterval').value);
+      const lastServiceDate = document.getElementById('custLastServiceDate').value;
+      const nextDueDate = document.getElementById('custNextDueDate').value;
+      const notes = document.getElementById('custNotes').value.trim();
+
+      if (id) {
+        // Edit existing
+        const index = customers.findIndex(c => c.id === id);
+        if (index !== -1) {
+          customers[index] = {
+            ...customers[index],
+            name, phone, area, purifierType, intervalMonths, lastServiceDate, nextDueDate, notes
+          };
+        }
+      } else {
+        // Add new
+        const newCust = {
+          id: 'cust_' + Date.now(),
+          name, phone, area, purifierType, intervalMonths, lastServiceDate, nextDueDate, notes,
+          logs: [
+            { date: new Date().toLocaleDateString('en-IN'), text: 'Customer account registered.' }
+          ]
+        };
+        customers.push(newCust);
+      }
+
+      saveToStorage();
+      resetCustomerForm();
+      switchTab('customers');
+    }
+
+    function resetCustomerForm() {
+      document.getElementById('customerForm').reset();
+      document.getElementById('customerId').value = '';
+      document.getElementById('formTitle').innerHTML = `<i class="fa-solid fa-user-plus text-cyan-400"></i><span>Add New Customer</span>`;
+      setDefaultDates();
+    }
+
+    function editCustomer(id) {
+      const cust = customers.find(c => c.id === id);
+      if (!cust) return;
+
+      document.getElementById('customerId').value = cust.id;
+      document.getElementById('custName').value = cust.name;
+      document.getElementById('custPhone').value = cust.phone;
+      document.getElementById('custArea').value = cust.area || '';
+      document.getElementById('custPurifierType').value = cust.purifierType || 'RO System';
+      document.getElementById('custInterval').value = cust.intervalMonths || 3;
+      document.getElementById('custLastServiceDate').value = cust.lastServiceDate;
+      document.getElementById('custNextDueDate').value = cust.nextDueDate;
+      document.getElementById('custNotes').value = cust.notes || '';
+
+      document.getElementById('formTitle').innerHTML = `<i class="fa-solid fa-pen-to-square text-cyan-400"></i><span>Edit Customer Record</span>`;
+      switchTab('add');
+    }
+
+    function deleteCustomer(id) {
+      const cust = customers.find(c => c.id === id);
+      if (confirm(`Are you sure you want to delete ${cust ? cust.name : 'this record'}?`)) {
+        customers = customers.filter(c => c.id !== id);
+        saveToStorage();
+        renderCustomerList();
+      }
+    }
+
+    // Quick Renew Service Action
+    function quickRenewService(id) {
+      const cust = customers.find(c => c.id === id);
+      if (!cust) return;
+
+      const todayStr = new Date().toISOString().split('T')[0];
+      const nextDueDateStr = calculateNextDueDate(todayStr, cust.intervalMonths || 3);
+
+      cust.lastServiceDate = todayStr;
+      cust.nextDueDate = nextDueDateStr;
+      
+      if (!cust.logs) cust.logs = [];
+      cust.logs.unshift({
+        date: new Date().toLocaleDateString('en-IN'),
+        text: `Service marked completed. Next due date updated to ${formatDate(nextDueDateStr)}.`
+      });
+
+      saveToStorage();
+      renderCustomerList();
+    }
+
+    // Service & Call Log Modal
+    function openServiceLogModal(id) {
+      const cust = customers.find(c => c.id === id);
+      if (!cust) return;
+
+      activeLogCustomerId = id;
+      document.getElementById('modalCustName').innerText = cust.name;
+      document.getElementById('modalCustMeta').innerText = `${cust.phone} • ${cust.area || 'N/A'}`;
+      document.getElementById('newLogText').value = '';
+
+      renderLogHistory(cust);
+      document.getElementById('serviceLogModal').classList.remove('hidden');
+    }
+
+    function closeServiceLogModal() {
+      activeLogCustomerId = null;
+      document.getElementById('serviceLogModal').classList.add('hidden');
+    }
+
+    function renderLogHistory(cust) {
+      const container = document.getElementById('logHistoryContainer');
+      container.innerHTML = '';
+
+      const logs = cust.logs || [];
+      if (logs.length === 0) {
+        container.innerHTML = `<p class="text-slate-500 italic">No interaction notes added yet.</p>`;
+        return;
+      }
+
+      logs.forEach(log => {
+        const item = document.createElement('div');
+        item.className = 'bg-slate-900 border border-slate-800 p-2.5 rounded-lg space-y-1';
+        item.innerHTML = `
+          <div class="text-[10px] text-cyan-400 font-semibold">${escapeHTML(log.date)}</div>
+          <div class="text-slate-200">${escapeHTML(log.text)}</div>
+        `;
+        container.appendChild(item);
+      });
+    }
+
+    function saveLogEntry() {
+      if (!activeLogCustomerId) return;
+      const text = document.getElementById('newLogText').value.trim();
+      if (!text) return;
+
+      const cust = customers.find(c => c.id === activeLogCustomerId);
+      if (!cust) return;
+
+      if (!cust.logs) cust.logs = [];
+      cust.logs.unshift({
+        date: new Date().toLocaleDateString('en-IN') + ' ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        text: text
+      });
+
+      saveToStorage();
+      renderLogHistory(cust);
+      renderCustomerList();
+      document.getElementById('newLogText').value = '';
+    }
+
+    // Update Top Dashboard Statistics
+    function updateDashboardStats() {
+      let overdue = 0;
+      let today = 0;
+      let upcoming = 0;
+
+      customers.forEach(c => {
+        const status = getCustomerStatus(c.nextDueDate);
+        if (status.type === 'overdue') overdue++;
+        if (status.type === 'today') today++;
+        if (status.days >= 0 && status.days <= 7) upcoming++;
+      });
+
+      document.getElementById('statTotal').innerText = customers.length;
+      document.getElementById('statOverdue').innerText = overdue;
+      document.getElementById('statToday').innerText = today;
+      document.getElementById('statUpcoming').innerText = upcoming;
+
+      // Update Filter Counter Badges
+      document.getElementById('cnt-all').innerText = customers.length;
+      document.getElementById('cnt-overdue').innerText = overdue;
+      document.getElementById('cnt-today').innerText = today;
+
+      const upcoming30 = customers.filter(c => {
+        const st = getCustomerStatus(c.nextDueDate);
+        return st.type === 'upcoming' || st.type === 'today';
+      }).length;
+      document.getElementById('cnt-upcoming').innerText = upcoming30;
+
+      const freshCount = customers.filter(c => getCustomerStatus(c.nextDueDate).type === 'fresh').length;
+      document.getElementById('cnt-fresh').innerText = freshCount;
+    }
+
+    // Export & Import Backup Engines
+    function exportJSONBackup() {
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(customers, null, 2));
+      const downloadAnchor = document.createElement('a');
+      const filename = `SRIVATSAV_Purifiers_Backup_${new Date().toISOString().split('T')[0]}.json`;
+      downloadAnchor.setAttribute("href", dataStr);
+      downloadAnchor.setAttribute("download", filename);
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+    }
+
+    function exportCSV() {
+      if (customers.length === 0) {
+        alert("No records to export.");
+        return;
+      }
+
+      let csvContent = "data:text/csv;charset=utf-8,";
+      csvContent += "Customer Name,Phone,Location,Purifier Model,Last Service Date,Next Follow-up Due,Notes\n";
+
+      customers.forEach(c => {
+        const row = [
+          `"${c.name.replace(/"/g, '""')}"`,
+          `"${c.phone}"`,
+          `"${(c.area || '').replace(/"/g, '""')}"`,
+          `"${(c.purifierType || '').replace(/"/g, '""')}"`,
+          `"${c.lastServiceDate}"`,
+          `"${c.nextDueDate}"`,
+          `"${(c.notes || '').replace(/"/g, '""')}"`
+        ];
+        csvContent += row.join(",") + "\n";
+      });
+
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", `SRIVATSAV_Customers_${new Date().toISOString().split('T')[0]}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    }
+
+    function importJSONBackup() {
+      const fileInput = document.getElementById('importFile');
+      if (!fileInput.files || fileInput.files.length === 0) {
+        alert("Please select a JSON backup file first.");
+        return;
+      }
+
+      const file = fileInput.files[0];
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const importedData = JSON.parse(e.target.result);
+          if (Array.isArray(importedData)) {
+            if (confirm(`Restore ${importedData.length} records? Existing records will be merged.`)) {
+              // Merge records preserving unique IDs
+              const existingIds = new Set(customers.map(c => c.id));
+              importedData.forEach(item => {
+                if (!existingIds.has(item.id)) {
+                  customers.push(item);
+                }
+              });
+              saveToStorage();
+              renderCustomerList();
+              alert("Data restored successfully!");
+              switchTab('customers');
+            }
+          } else {
+            alert("Invalid backup file format.");
+          }
+        } catch (err) {
+          alert("Error reading file. Ensure it is a valid JSON backup.");
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    // Helper Utility: Escape HTML
+    function escapeHTML(str) {
+      if (!str) return '';
+      return str.replace(/[&<>'"]/g, 
+        tag => ({
+          '&': '&amp;',
+          '<': '&lt;',
+          '>': '&gt;',
+          "'": '&#39;',
+          '"': '&quot;'
+        }[tag] || tag)
+      );
+    }
+
+    // Web Notifications Handler
+    function checkNotificationPermission() {
+      if ('Notification' in window && Notification.permission === 'default') {
+        document.getElementById('notificationBanner').classList.remove('hidden');
+      }
+    }
+
+    function requestNotificationPermission() {
+      if ('Notification' in window) {
+        Notification.requestPermission().then(permission => {
+          document.getElementById('notificationBanner').classList.add('hidden');
+          if (permission === 'granted') {
+            triggerDueNotification();
+          }
+        });
+      }
+    }
+
+    function triggerDueNotification() {
+      const overdueOrToday = customers.filter(c => {
+        const st = getCustomerStatus(c.nextDueDate);
+        return st.type === 'overdue' || st.type === 'today';
+      });
+
+      if (overdueOrToday.length > 0 && Notification.permission === 'granted') {
+        new Notification('SRIVATSAV Water Purifiers', {
+          body: `You have ${overdueOrToday.length} customer service(s) due or overdue today!`,
+          icon: 'https://img.icons8.com/color/192/water-filter.png'
+        });
+      }
+    }
+
+    // Inline Service Worker Registration for Offline Capabilities
+    function registerServiceWorker() {
+      if ('serviceWorker' in navigator) {
+        const swCode = `
+          const CACHE_NAME = 'srivatsav-tracker-v1';
+          self.addEventListener('install', e => {
+            e.waitUntil(
+              caches.open(CACHE_NAME).then(cache => {
+                return cache.addAll(['./']);
+              })
+            );
+          });
+          self.addEventListener('fetch', e => {
+            e.respondWith(
+              caches.match(e.request).then(response => {
+                return response || fetch(e.request);
+              })
+            );
+          });
+        `;
+        const blob = new Blob([swCode], { type: 'application/javascript' });
+        const blobUrl = URL.createObjectURL(blob);
+        navigator.serviceWorker.register(blobUrl).catch(err => console.log('SW Registration failed', err));
+      }
+    }
+  </script>
+</body>
+</html>
+```
