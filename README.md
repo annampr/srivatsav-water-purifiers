@@ -1,1 +1,0 @@
-# srivatsav-water-purifiers
